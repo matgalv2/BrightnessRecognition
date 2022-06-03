@@ -4,31 +4,21 @@ object Main {
 
   def main(args: Array[String]): Unit = {
 
-    val inputDirectory = ""
-    val outputDirectory = ""
-
-    //get all paths
-
-    //map them as Image
+    val inputDirectory = "X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\resources\\photos"
+    val outputDirectory = "X:\\Dokumenty\\Praca\\Scalac\\output"
 
 
-    val paths = Image.getImagesPaths("X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\resources\\photos")
+    val paths = Image.getImagesPaths(inputDirectory)
 
 
-    val brightnesses = paths.map(path => new Image(path)).map(image => image.brightness = Image.getImageBrightness(image.path)).map(image => image.brightness)
+    val images = paths.map(path => new Image(path)).map(image => image.brightness = Image.getImageBrightness(image.path))
+//      .map(image => image.brightness)
 
-    //
+    println(images.head)
 
-    println(brightnesses)
+    images.foreach(image => image.classify(outputDirectory, 20))
 
-    println(Image.folderExists("X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\src\\main\\scala\\Image.scala"))
-
-    //    brightnesses.foreach(image => print(image.brightness))
-
-
-
-    val x,y = 0
-
+    println(Image.loadImage())
 
   }
 

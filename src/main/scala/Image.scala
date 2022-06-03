@@ -1,4 +1,7 @@
+import com.ibm.jvm.dtfjview.tools.utils.FileUtils
+
 import java.io.File
+import java.nio.file.{Files, Paths, StandardCopyOption}
 import javax.imageio.ImageIO
 
 
@@ -14,15 +17,31 @@ class Image (private var _path: String, private var _brightness: Int = Image.Not
     this
   }
 
-  def classify(outputPath: String): Unit = {
+  def classify(outputPath: String, cutOffPoint: Int): Unit = {
+    if(!Image.folderExists(outputPath))
+      return
 
-
-    if(_brightness == Image.NotCheckedYet){}
+    if(_brightness == Image.NotCheckedYet) {
+    }
     else {
-      if(Image.folderExists(this.path)){
+
+      //      if(Image.folderExists(this.path)){
+      if(true){
+        try {
+          val brightnessClass = if(brightness > cutOffPoint) Image.BrightLabel else Image.DarkLabel
+          val (filename, extension) = Image.getFileNameWithExtension(path)
+          Files.copy(Paths.get(path),Paths.get(s"${outputPath}\\${filename}_${brightnessClass}_${brightness.toString + extension}"), StandardCopyOption.REPLACE_EXISTING)
+        }
+        catch {
+          case e: Exception => e.printStackTrace()
+        }
 
       }
     }
+  }
+
+  override def toString: String = {
+    brightness + " " + path
   }
 
 }
@@ -30,10 +49,13 @@ class Image (private var _path: String, private var _brightness: Int = Image.Not
 object Image{
 
   private val NotCheckedYet = -1
+  private val BrightLabel = "bright"
+  private val DarkLabel = "dark"
 
-  def loadImage(): Unit = {
+
+  def loadImage(): Int = {
     //    val image = ImageIO.read(new File("X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\photos\\bright\\a.jpg"))
-    val image = ImageIO.read(new File("X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\resources\\photos\\c.jpg"))
+    val image = ImageIO.read(new File("X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\resources\\photos\\bright\\c.jpg"))
 
     var red = 0
     var green = 0
@@ -41,7 +63,6 @@ object Image{
 
     for(i <- 0 until image.getWidth; j <- 0 until image.getHeight){
       val colour = image.getRGB(i, j)
-
       red += (colour >>> 16) & 0xFF
       green += (colour >>> 8) & 0xFF
       blue += (colour >>> 0) & 0xFF
@@ -52,7 +73,9 @@ object Image{
     blue /= image.getWidth * image.getHeight
 
 
-    println((red * 0.2126f + green * 0.7152f + blue * 0.0722f) / 255)
+//    println((red * 0.2126f + green * 0.7152f + blue * 0.0722f) / 255)
+
+    image.getRGB(0, 0)
 
     //scale image to 1x1 pixel or iterate through every single pixel and add its rgb to (r,g,b) and divide by pixel's number
     /*
@@ -134,7 +157,16 @@ object Image{
   def folderExists(path: String): Boolean = {
     val destination = new File(path)
 
-    destination.exists() && destination.isDirectory
+    destination.exists && destination.isDirectory
+  }
+
+  private def getFileNameWithExtension(path: String): (String, String) = {
+    /* Only for files. If the path points to folder error will be thrown. */
+//    val pattern = "(^.*\\\\.*\\\\([a-z]|[A-Z]|[0-9])+)(\\.[A-z]+$)".r
+//    val pattern = "(.*[A-z]\\\\[A-z]+)(\\.[A-z]+$)".r
+    val pattern = "(^.*\\\\.*\\\\)([a-z]|[A-Z]|[0-9])+(\\.[A-z]+$)".r
+    val pattern(_,filename, extension) = path
+    (filename, extension)
   }
 
 
