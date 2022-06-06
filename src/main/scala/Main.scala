@@ -7,29 +7,20 @@ object Main {
     val inputDirectory = "X:\\Dokumenty\\Praca\\Scalac\\BrightnessRecognition\\resources\\photos"
 //    val inputDirectory = "X:\\Dokumenty\\Praca\\Scalac\\test_images"
     val outputDirectory = "X:\\Dokumenty\\Praca\\Scalac\\output"
-    val cutOffPoint = 20
+    val cutOffPoint = 80
 
-
-
-    val paths = Image.getImagesPaths(inputDirectory)
-    var start = System.nanoTime()
-    val images = paths.par.map(path => new Image(path)).par.map(image => image.brightness = Image.getImageBrightness(image.path))
-
-
+    val paths = ImageAnalyser.getImagesPaths(inputDirectory)
+    val images = paths.par.map(path => ImageAnalyser(path)).par.map(image => image.brightness = ImageAnalyser.getImageBrightness(image.path))
     images.par.foreach(image => image.classify(outputDirectory, cutOffPoint))
 
-    println(System.nanoTime() - start, " <- równolegle")
 
-    start = System.nanoTime()
-    val images2 = paths.map(path => new Image(path)).map(image => image.brightness = Image.getImageBrightness(image.path))
-    images2.par.foreach(image => image.classify(outputDirectory, cutOffPoint))
-    println(System.nanoTime() - start, " <- sekwencyjnie")
 
     /* TODO:
-        1. Resistance to errors like file not found
-        2. Added weighted brightness based on distance to center of image
+        1. Weighted brightness based on distance to center of image
+    */
 
-     */
+
+
 
   }
 

@@ -3,7 +3,7 @@ import java.nio.file.{Files, Paths, StandardCopyOption}
 import javax.imageio.ImageIO
 
 
-class Image (private var _path: String, private var _brightness: Int = Image.NotCheckedYet){
+class ImageAnalyser(private var _path: String, private var _brightness: Int = ImageAnalyser.NotCheckedYet){
 
   def path: String = _path
 
@@ -14,17 +14,15 @@ class Image (private var _path: String, private var _brightness: Int = Image.Not
   }
 
   def classify(outputPath: String, cutOffPoint: Int): Unit = {
-    if(!Image.folderExists(outputPath))
-      return
-
-    if(_brightness == Image.NotCheckedYet) {
-    }
-    else {
-      if(Image.fileExists(this.path)){
+    if(ImageAnalyser.folderExists(outputPath) && (brightness != ImageAnalyser.NotCheckedYet || brightness == ImageAnalyser.UndefinedBrightness)){
+      if(ImageAnalyser.fileExists(this.path)){
+        val darknessLevel = 100 - brightness
+        val brightnessClass = if(darknessLevel < cutOffPoint) ImageAnalyser.BrightLabel else ImageAnalyser.DarkLabel
+        val (filename, extension) = ImageAnalyser.getFileNameWithExtension(path)
         try {
-          val brightnessClass = if(brightness > cutOffPoint) Image.BrightLabel else Image.DarkLabel
-          val (filename, extension) = Image.getFileNameWithExtension(path)
-          Files.copy(Paths.get(path),Paths.get(s"$outputPath\\${filename}_${brightnessClass}_${brightness.toString + extension}"), StandardCopyOption.REPLACE_EXISTING)
+          Files.copy(Paths.get(path),
+            Paths.get(s"$outputPath\\${filename}_${brightnessClass}_$darknessLevel$extension"),
+            StandardCopyOption.REPLACE_EXISTING)
         }
         catch {
           case e: Exception => e.printStackTrace()
@@ -38,15 +36,26 @@ class Image (private var _path: String, private var _brightness: Int = Image.Not
   }
 }
 
-object Image{
+object ImageAnalyser{
 
   private val NotCheckedYet = -1
+  private val UndefinedBrightness = -2
   private val BrightLabel = "bright"
   private val DarkLabel = "dark"
 
+  def apply(path: String): ImageAnalyser = new ImageAnalyser(path)
+
   def getImageBrightness(path: String): Int = {
 
-    val image = ImageIO.read(new File(path))
+    val file = new File(path)
+
+    if(!file.canRead)
+      return UndefinedBrightness
+
+    val image = ImageIO.read(file)
+
+    if(image == null)
+      return UndefinedBrightness
 
     var red = 0
     var green = 0
@@ -72,13 +81,13 @@ object Image{
     luminance
   }
 
-  def getImagesPaths(path: String): List[String] = {
+  def getImagesPaths(path: String, extensions: String = "(jpg)|(png)|(jpeg)"): List[String] = {
     // must check firstly if path exists!
     def getPathsRec(list: List[String], path: String): List[String] =
       list match {
         case Nil => Nil
         case head::tail =>  if(new File(path + "\\" + head).isDirectory) getPathsRec(tail, path) ::: getPathsRec(new File(path + "\\" + head).list().toList, path + "\\" + head)
-        else if(head.matches(".*\\.((jpg)||(png))$")) (path + "\\" + head) :: getPathsRec(tail, path)
+        else if(head.matches(".*\\.(" + extensions + ")$")) (path + "\\" + head) :: getPathsRec(tail, path)
         else getPathsRec(tail, path)
       }
     getPathsRec(new File(path).list().toList, path)
