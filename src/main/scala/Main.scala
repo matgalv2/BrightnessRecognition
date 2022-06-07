@@ -5,7 +5,7 @@ object Main {
   def main(args: Array[String]): Unit = {
 
     val inputDirectory = "resources\\photos"
-    val outputDirectory = "src\\main\\resources\\output"
+    val outputDirectory = "resources\\output"
     val cutOffPoint = 80
 
     val paths = ImageAnalyser.getImagesPaths(inputDirectory)
