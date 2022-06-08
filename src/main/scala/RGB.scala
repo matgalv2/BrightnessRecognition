@@ -41,7 +41,7 @@ class RGB(private var _red: Int =0, private var _green: Int =0, private var _blu
 }
 object RGB{
 
-  def apply(): RGB= new RGB()
+  def apply(): RGB = new RGB()
 
   /**
    * Calculates luminance, using SRGB luminance constants.

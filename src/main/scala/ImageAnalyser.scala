@@ -1,6 +1,8 @@
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.{Files, Paths, StandardCopyOption}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import javax.imageio.ImageIO
 import javax.management.InvalidAttributeValueException
 
@@ -49,15 +51,22 @@ class ImageAnalyser(private val _path: String){
    * effect, just like in case in which object has brightness below 0.
    *
    *
-   * @param outputPath - path to folder, where result will be copied.
-   * @param cutOffPoint - value from which brightness are considered as dark.
+   * @param outputPath path to folder, where result will be copied.
+   * @param cutOffPoint value from which brightness are considered as dark.
+   * @param avoidCollisionName indicates if filenames collision should be solved.
    */
-  def classify(outputPath: String, cutOffPoint: Int): Unit = {
+  def classify(outputPath: String, cutOffPoint: Int, avoidCollisionName: Boolean = false): Unit = {
     if(ImageAnalyser.folderExists(outputPath) && (brightness != ImageAnalyser.NotCheckedYet || brightness == ImageAnalyser.UndefinedBrightness)){
       if(ImageAnalyser.fileExists(this.path)){
         val darknessLevel = 100 - brightness
         val brightnessClass = if(darknessLevel < cutOffPoint) ImageAnalyser.BrightLabel else ImageAnalyser.DarkLabel
-        val (filename, extension) = ImageAnalyser.getFileNameWithExtension(path)
+        var (filename, extension) = ImageAnalyser.getFileNameWithExtension(path)
+
+        if(avoidCollisionName) {
+          val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss.SSS")
+          LocalDateTime.now().format(formatter)
+          filename = LocalDateTime.now().format(formatter) + "__" + filename
+        }
 
         try {
           Files.copy(Paths.get(path),
@@ -66,6 +75,7 @@ class ImageAnalyser(private val _path: String){
         }
         catch {
           case e: Exception => e.printStackTrace()
+
         }
       }
     }
@@ -170,24 +180,26 @@ object ImageAnalyser{
     val heightLimits = (image.getHeight/2 - image.getHeight*radius/2,image.getHeight/2 + image.getHeight*radius/2)
     val widthLimits = (image.getWidth/2 - image.getWidth*radius/2,image.getWidth/2 + image.getWidth*radius/2)
 
-    var n, m = 0
+    var pixels_center = 0
 
     for(i <- 0 until image.getWidth; j <- 0 until image.getHeight){
       val colour = image.getRGB(i, j)
 
       if(i >= widthLimits._1 && i <= widthLimits._2 && j >= heightLimits._1 && j <= heightLimits._2) {
         rgb_central.addRGBValue(colour)
-        n += 1
+        pixels_center += 1
       }
       else
         rgb_edges.addRGBValue(colour)
     }
 
-    n = if(n != 0) n else 1
-    m = if(m != 0) image.getHeight*image.getWidth - n else 1
+    var pixels_edges = image.getHeight*image.getWidth - pixels_center
 
-    rgb_central /= n
-    rgb_edges /= m
+    pixels_center = if(pixels_center != 0) pixels_center else 1
+    pixels_edges = if(pixels_edges != 0) pixels_edges else 1
+
+    rgb_central /= pixels_center
+    rgb_edges /= pixels_edges
 
     val luminance_center = RGB.luminance(rgb_central)
     val luminance_edges = RGB.luminance(rgb_edges)
@@ -216,8 +228,8 @@ object ImageAnalyser{
   /**
    * Get all files from folder and its every subfolder. If path is incorrect returns empty List.
    * @param path path to folder.
-   * @param extensions group of extensions as regular expression, which decide file with which extension should be added to list.
-   * @return list with all pathnames to files, which extension matched any case from <emp>extensions</emp>
+   * @param extensions group of extensions as regular expression, which decide which file will be added to the list.
+   * @return list of all paths to files, which extension matched any of <emp>extensions</emp>
    */
 
   def getImagesPaths(path: String, extensions: String = "(jpg)|(png)|(jpeg)"): List[String] = {
@@ -230,7 +242,7 @@ object ImageAnalyser{
 
   /**
    * Checks if folder exists.
-   * @param path pathname to foler.
+   * @param path pathname to folder.
    * @return True if pathname points to valid folder.
    */
   private def folderExists(path: String): Boolean = {

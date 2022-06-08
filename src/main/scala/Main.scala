@@ -11,8 +11,12 @@ object Main {
     val paths = ImageAnalyser.getImagesPaths(inputDirectory)
     val images = paths.par.map(path => ImageAnalyser(path)).par
       .map(image => image.brightness = ImageAnalyser.getImageBrightness(image.path))
-//      .map(image => image.brightness = ImageAnalyser.getImageBrightness(image.path,0.3f,(1,0)))
     images.par.foreach(image => image.classify(outputDirectory, cutOffPoint))
+
+
+    // 2nd option
+//      .map(image => image.brightness = ImageAnalyser.getImageWeightedBrightness(image.path,0.3f,(1,0)))
+//    images.par.foreach(image => image.classify(outputDirectory, cutOffPoint, avoidCollisionName=true))
 
   }
 
