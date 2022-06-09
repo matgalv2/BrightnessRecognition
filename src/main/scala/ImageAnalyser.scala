@@ -11,8 +11,6 @@ import javax.management.InvalidAttributeValueException
 /**
  * An abstract representation of features of image file.
  *
- *
- *
  * @author Mateusz Galicki
  * */
 
@@ -56,7 +54,7 @@ class ImageAnalyser(private val _path: String){
    * @param avoidCollisionName indicates if filenames collision should be solved.
    */
   def classify(outputPath: String, cutOffPoint: Int, avoidCollisionName: Boolean = false): Unit = {
-    if(ImageAnalyser.folderExists(outputPath) && (brightness != ImageAnalyser.NotCheckedYet || brightness == ImageAnalyser.UndefinedBrightness)){
+    if(ImageAnalyser.folderExists(outputPath) && (brightness != ImageAnalyser.NotCheckedYet && brightness != ImageAnalyser.UndefinedBrightness)){
       if(ImageAnalyser.fileExists(this.path)){
         val darknessLevel = 100 - brightness
         val brightnessClass = if(darknessLevel < cutOffPoint) ImageAnalyser.BrightLabel else ImageAnalyser.DarkLabel
@@ -64,7 +62,6 @@ class ImageAnalyser(private val _path: String){
 
         if(avoidCollisionName) {
           val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH-mm-ss.SSS")
-          LocalDateTime.now().format(formatter)
           filename = LocalDateTime.now().format(formatter) + "__" + filename
         }
 
